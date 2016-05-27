@@ -3,7 +3,7 @@
 [![Test Coverage](https://codeclimate.com/github/joshughes/fluent-plugin-ecs-filter/badges/coverage.svg)](https://codeclimate.com/github/joshughes/fluent-plugin-ecs-filter/coverage)
 [![Gem Version](https://badge.fury.io/rb/fluent-plugin-ecs-filter.svg)](https://badge.fury.io/rb/fluent-plugin-ecs-filter)
 [![Inline docs](http://inch-ci.org/github/joshughes/fluent-plugin-ecs-filter.svg?branch=master)](http://inch-ci.org/github/joshughes/fluent-plugin-ecs-filter)
-[![Dependency Status](https://www.versioneye.com/user/projects/5658d10aaef3b5003e000000/badge.svg?style=flat)](https://www.versioneye.com/user/projects/5658d10aaef3b5003e000000)
+[![Dependency Status](https://www.versioneye.com/user/projects/5748a0dace8d0e004505f7cd/badge.svg?style=flat)](https://www.versioneye.com/user/projects/5748a0dace8d0e004505f7cd)
 
 Marathon, Chronos and Mesos combined can allow for teams to build a great solution for deploying and scaling containers. The issue is when you have a system like Kibana it can be hard to identify what container or task a log is coming from.
 
