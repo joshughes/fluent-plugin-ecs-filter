@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
 
   gem.required_ruby_version = '>= 2.0.0'
 
-  gem.add_runtime_dependency 'fluentd', '>= 0.12.25'
+  gem.add_runtime_dependency 'fluentd', '>= 0.10.43'
   gem.add_runtime_dependency 'lru_redux', '~> 1.1'
   gem.add_runtime_dependency 'docker-api', '~> 1.28'
   gem.add_runtime_dependency 'oj', '>= 2.15.1'
