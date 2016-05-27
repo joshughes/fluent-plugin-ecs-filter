@@ -38,6 +38,8 @@ With the default regex in the plugin we extract the following data and inject it
 
 If your using the docker fluentd logging plugin your configuration should look something like this.
 
+
+
 ```
 <source>
   type forward
