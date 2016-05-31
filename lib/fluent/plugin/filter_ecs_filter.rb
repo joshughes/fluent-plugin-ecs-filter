@@ -24,7 +24,7 @@ module Fluent
     config_param :cache_size, :integer, default: 1000
     config_param :cache_ttl, :integer, default: 60 * 60
     config_param :container_id_attr, :string, default: 'container_id'
-
+    config_param :task_family_prepend, :string, default: nil
     config_param :merge_json_log, :bool, default: true
 
     # Get the configuration for the plugin
@@ -39,7 +39,6 @@ module Fluent
       @cache_ttl = :none if @cache_ttl < 0
 
       @cache = LruRedux::TTL::ThreadSafeCache.new(@cache_size, @cache_ttl)
-
     end
 
     # Gets the log event stream and moifies it. This is where the plugin hooks
@@ -98,6 +97,7 @@ module Fluent
       if container
         labels = container.json['Config']['Labels']
         task_data['task_family']  = labels['com.amazonaws.ecs.task-definition-family']
+        task_data['task_family'].prepend(@task_family_prepend) if @task_family_prepend
         task_data['task_version'] = labels['com.amazonaws.ecs.task-definition-version']
         task_data['task_id']      = labels['com.amazonaws.ecs.task-arn'].split('/').last
       end

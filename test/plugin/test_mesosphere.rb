@@ -25,6 +25,9 @@ class ECSFilterTest < Test::Unit::TestCase
     get_container_id_tag true
     container_id_attr container_id
   ]
+  CONFIG4 = %[
+    task_family_prepend foo-
+  ]
 
   def create_driver(conf = CONFIG, tag = 'test')
     Fluent::Test::FilterTestDriver.new(Fluent::ECSFilter, tag).configure(conf)
@@ -58,6 +61,20 @@ class ECSFilterTest < Test::Unit::TestCase
     assert_equal 'unifi-video', log_entry['task_family']
     assert_equal '9', log_entry['task_version']
     assert_equal task_id, log_entry['task_id']
+  end
+
+  def test_task_family_prepend
+    setup_ecs_container('foobar123', 'ecs')
+
+    d1 = create_driver(CONFIG4, 'docker.foobar123')
+    d1.run do
+      d1.filter('log' => 'Hello World 1')
+    end
+    filtered = d1.filtered_as_array
+
+    log_entry = filtered[0][2]
+
+    assert_equal 'foo-unifi-video', log_entry['task_family']
   end
 
   def test_container_cache
