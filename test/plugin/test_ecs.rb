@@ -28,6 +28,9 @@ class ECSFilterTest < Test::Unit::TestCase
   CONFIG4 = %[
     task_family_prepend foo-
   ]
+  CONFIG5 = %[
+    container_id_attr docker.id
+  ]
 
   def create_driver(conf = CONFIG, tag = 'test')
     Fluent::Test::FilterTestDriver.new(Fluent::ECSFilter, tag).configure(conf)
@@ -75,6 +78,27 @@ class ECSFilterTest < Test::Unit::TestCase
     log_entry = filtered[0][2]
 
     assert_equal 'foo-unifi-video', log_entry['task_family']
+  end
+
+  def test_nested_container_id
+    setup_ecs_container('foobar1234', 'get_from_record')
+
+    d1 = create_driver(CONFIG5)
+    d1.run do
+      d1.filter('log' => 'Hello World 1', 'docker': {
+                'id': 'foobar1234',
+                'name': 'k8s_fabric8-console-container.efbd6e64_fabric8-console-controller-9knhj_default_8ae2f621-f360-11e4-8d12-54ee7527188d_7ec9aa3e',
+                'container_hostname': 'fabric8-console-controller-9knhj',
+                'image': 'fabric8/hawtio-kubernetes:latest',
+                'image_id': 'b2bd1a24a68356b2f30128e6e28e672c1ef92df0d9ec01ec0c7faea5d77d2303',
+                'labels': {}
+                })
+    end
+    filtered = d1.filtered_as_array
+
+    log_entry = filtered[0][2]
+    puts "LOG ENTRY #{log_entry}"
+    assert_equal 'unifi-video', log_entry['task_family']
   end
 
   def test_container_cache
