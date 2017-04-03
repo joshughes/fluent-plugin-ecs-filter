@@ -23,7 +23,7 @@ module Fluent
 
     config_param :cache_size, :integer, default: 1000
     config_param :cache_ttl, :integer, default: 60 * 60
-    config_param :container_id_attr, :string, default: 'container_id'
+    config_param :container_id_attr, :string, default: nil
     config_param :task_family_prepend, :string, default: nil
     config_param :merge_json_log, :bool, default: true
 
@@ -35,6 +35,7 @@ module Fluent
       require 'lru_redux'
       require 'oj'
       require 'time'
+      require 'vine'
 
       @cache_ttl = :none if @cache_ttl < 0
 
@@ -45,12 +46,21 @@ module Fluent
     # into the fluentd envent stream.
     def filter_stream(tag, es)
       new_es = MultiEventStream.new
+      container_id_from_tag = nil
 
-      container_id = get_container_id_from_tag(tag)
+      if container_id_attr.nil?
+        container_id_from_tag = get_container_id_from_tag(tag)
+      end
 
       es.each do |time, record|
-        container_id =
-          get_container_id_from_record(record) if container_id.empty?
+        #puts "OMG #{container_id_from_tag}"
+        if container_id_from_tag.nil?
+          puts "GETTING FROM RECORD"
+          container_id = get_container_id_from_record(record)
+          puts "GOT CONTAINER ID #{container_id} from record"
+        else
+          container_id = container_id_from_tag
+        end
         next unless container_id
         new_es.add(time, modify_record(record, get_ecs_data(container_id)))
       end
@@ -125,7 +135,7 @@ module Fluent
     # ==== Returns:
     # * A docker container id
     def get_container_id_from_record(record)
-      record[@container_id_attr]
+      record.access(@container_id_attr)
     end
 
     # Look at the log value and if it is valid json then we will parse the json

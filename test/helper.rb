@@ -1,7 +1,7 @@
 require "simplecov"
 SimpleCov.start
-require "codeclimate-test-reporter"
-CodeClimate::TestReporter.start
+# require "codeclimate-test-reporter"
+# CodeClimate::TestReporter.start
 
 require 'rubygems'
 require 'bundler'
@@ -19,7 +19,7 @@ require 'pry'
 
 
 require "simplecov"
-require "codeclimate-test-reporter"
+# require "codeclimate-test-reporter"
 if ENV['CIRCLE_ARTIFACTS']
   dir = File.join("..", "..", "..", ENV['CIRCLE_ARTIFACTS'], "coverage")
   SimpleCov.coverage_dir(dir)
