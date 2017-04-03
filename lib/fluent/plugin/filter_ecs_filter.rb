@@ -90,7 +90,6 @@ module Fluent
     # ==== Returns:
     # * A hash of data that describes a ecs task
     def get_ecs_data(container_id)
-      puts "GET ECS DATA FOR #{container_id}"
       @cache.getset(container_id) do
         get_container_metadata(container_id)
       end
@@ -105,8 +104,6 @@ module Fluent
     def get_container_metadata(id)
       task_data = {}
       container = Docker::Container.get(id)
-      puts "GET metadata for #{id}"
-      puts "Container is #{container.json}"
       if container
         labels = container.json['Config']['Labels']
         task_data['task_family']  = labels['com.amazonaws.ecs.task-definition-family']
