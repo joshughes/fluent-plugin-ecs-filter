@@ -15,6 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'docker-api'
+require 'lru_redux'
+require 'oj'
+require 'time'
+require 'vine'
 require 'fluent/plugin/filter'
 
 module Fluent::Plugin
@@ -32,12 +37,6 @@ module Fluent::Plugin
     # Get the configuration for the plugin
     def configure(conf)
       super
-
-      require 'docker-api'
-      require 'lru_redux'
-      require 'oj'
-      require 'time'
-      require 'vine'
 
       @cache_ttl = :none if @cache_ttl < 0
 
