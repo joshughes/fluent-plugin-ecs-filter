@@ -15,7 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-module Fluent
+require 'docker-api'
+require 'lru_redux'
+require 'oj'
+require 'time'
+require 'vine'
+require 'fluent/plugin/filter'
+
+module Fluent::Plugin
   # Parses ECS data from docker to make fluentd logs more
   # useful.
   class ECSFilter < Filter
@@ -31,12 +38,6 @@ module Fluent
     def configure(conf)
       super
 
-      require 'docker-api'
-      require 'lru_redux'
-      require 'oj'
-      require 'time'
-      require 'vine'
-
       @cache_ttl = :none if @cache_ttl < 0
 
       @cache = LruRedux::TTL::ThreadSafeCache.new(@cache_size, @cache_ttl)
@@ -45,7 +46,7 @@ module Fluent
     # Gets the log event stream and moifies it. This is where the plugin hooks
     # into the fluentd envent stream.
     def filter_stream(tag, es)
-      new_es = MultiEventStream.new
+      new_es = Fluent::MultiEventStream.new
       container_id_from_tag = nil
 
       if container_id_attr.nil?

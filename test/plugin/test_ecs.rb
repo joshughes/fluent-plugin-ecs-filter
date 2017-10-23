@@ -32,8 +32,8 @@ class ECSFilterTest < Test::Unit::TestCase
     container_id_attr docker.id
   ]
 
-  def create_driver(conf = CONFIG, tag = 'test')
-    Fluent::Test::FilterTestDriver.new(Fluent::ECSFilter, tag).configure(conf)
+  def create_driver(conf = CONFIG)
+    Fluent::Test::Driver::Filter.new(Fluent::Plugin::ECSFilter).configure(conf)
   end
 
   def setup_docker_stub(file, docker_api_url)
@@ -51,15 +51,15 @@ class ECSFilterTest < Test::Unit::TestCase
   def test_ecs_filter
     setup_ecs_container('foobar123', 'ecs')
 
-    d1 = create_driver(CONFIG, 'docker.foobar123')
-    d1.run do
-      d1.filter('log' => 'Hello World 1')
+    d1 = create_driver(CONFIG)
+    d1.run(default_tag: 'docker.foobar123') do
+      d1.feed('log' => 'Hello World 1')
     end
-    filtered = d1.filtered_as_array
+    filtered = d1.filtered
 
     task_id = 'fdb86b4f-b919-4a65-89eb-4b3761eb8952'
 
-    log_entry = filtered[0][2]
+    log_entry = filtered[0][1]
 
     assert_equal 'unifi-video', log_entry['task_family']
     assert_equal '9', log_entry['task_version']
@@ -69,13 +69,13 @@ class ECSFilterTest < Test::Unit::TestCase
   def test_task_family_prepend
     setup_ecs_container('foobar123', 'ecs')
 
-    d1 = create_driver(CONFIG4, 'docker.foobar123')
-    d1.run do
-      d1.filter('log' => 'Hello World 1')
+    d1 = create_driver(CONFIG4)
+    d1.run(default_tag: 'docker.foobar123') do
+      d1.feed('log' => 'Hello World 1')
     end
-    filtered = d1.filtered_as_array
+    filtered = d1.filtered
 
-    log_entry = filtered[0][2]
+    log_entry = filtered[0][1]
 
     assert_equal 'foo-unifi-video', log_entry['task_family']
   end
@@ -84,19 +84,19 @@ class ECSFilterTest < Test::Unit::TestCase
     setup_ecs_container('foobar1234', 'get_from_record')
 
     d1 = create_driver(CONFIG5)
-    d1.run do
-      d1.filter('log' => 'Hello World 1', 'docker': {
-                'id': 'foobar1234',
-                'name': 'k8s_fabric8-console-container.efbd6e64_fabric8-console-controller-9knhj_default_8ae2f621-f360-11e4-8d12-54ee7527188d_7ec9aa3e',
-                'container_hostname': 'fabric8-console-controller-9knhj',
-                'image': 'fabric8/hawtio-kubernetes:latest',
-                'image_id': 'b2bd1a24a68356b2f30128e6e28e672c1ef92df0d9ec01ec0c7faea5d77d2303',
-                'labels': {}
-                })
+    d1.run(default_tag: 'test') do
+      d1.feed('log' => 'Hello World 1', 'docker': {
+              'id': 'foobar1234',
+              'name': 'k8s_fabric8-console-container.efbd6e64_fabric8-console-controller-9knhj_default_8ae2f621-f360-11e4-8d12-54ee7527188d_7ec9aa3e',
+              'container_hostname': 'fabric8-console-controller-9knhj',
+              'image': 'fabric8/hawtio-kubernetes:latest',
+              'image_id': 'b2bd1a24a68356b2f30128e6e28e672c1ef92df0d9ec01ec0c7faea5d77d2303',
+              'labels': {}
+              })
     end
-    filtered = d1.filtered_as_array
+    filtered = d1.filtered
 
-    log_entry = filtered[0][2]
+    log_entry = filtered[0][1]
     puts "LOG ENTRY #{log_entry}"
     assert_equal 'unifi-video', log_entry['task_family']
   end
@@ -104,30 +104,30 @@ class ECSFilterTest < Test::Unit::TestCase
   def test_container_cache
     setup_ecs_container('foobar123', 'ecs')
 
-    d1 = create_driver(CONFIG, 'docker.foobar123')
-    d1.run do
+    d1 = create_driver(CONFIG)
+    d1.run(default_tag: 'docker.foobar123') do
       1000.times do
-        d1.filter('log' => 'Hello World 4')
+        d1.feed('log' => 'Hello World 4')
       end
     end
     docker_api_url = 'http://tcp//example.com:5422/v1.16/containers/foobar123/json'
 
-    assert_equal 1000, d1.filtered_as_array.length
+    assert_equal 1000, d1.filtered.length
     assert_requested(:get, docker_api_url, times: 2)
   end
 
   def test_container_cache_expiration
     setup_ecs_container('foobar123', 'ecs')
 
-    d1 = create_driver(CONFIG2, 'docker.foobar123')
-    d1.run do
-      d1.filter('log' => 'Hello World 4')
+    d1 = create_driver(CONFIG2)
+    d1.run(default_tag: 'docker.foobar123') do
+      d1.feed('log' => 'Hello World 4')
     end
 
     Timecop.travel(Time.now + 10 * 60)
 
-    d1.run do
-      d1.filter('log' => 'Hello World 4')
+    d1.run(default_tag: 'docker.foobar123') do
+      d1.feed('log' => 'Hello World 4')
     end
 
     Timecop.return
@@ -140,12 +140,12 @@ class ECSFilterTest < Test::Unit::TestCase
   def test_merge_json
     setup_ecs_container('foobar123', 'ecs')
 
-    d1 = create_driver(CONFIG, 'docker.foobar123')
-    d1.run do
-      d1.filter('log' => '{"test_key":"Hello World"}')
+    d1 = create_driver(CONFIG)
+    d1.run(default_tag: 'docker.foobar123') do
+      d1.feed('log' => '{"test_key":"Hello World"}')
     end
-    filtered = d1.filtered_as_array
-    log_entry = filtered[0][2]
+    filtered = d1.filtered
+    log_entry = filtered[0][1]
 
     assert_equal 'Hello World', log_entry['test_key']
   end
@@ -155,15 +155,15 @@ class ECSFilterTest < Test::Unit::TestCase
     bad_json1 = '{"test_key":"Hello World"'
     bad_json2 = '{"test_key":"Hello World", "badnews"}'
 
-    d1 = create_driver(CONFIG, 'docker.foobar123')
-    d1.run do
-      d1.filter('log' => bad_json1)
-      d1.filter('log' => bad_json2)
+    d1 = create_driver(CONFIG)
+    d1.run(default_tag: 'docker.foobar123') do
+      d1.feed('log' => bad_json1)
+      d1.feed('log' => bad_json2)
     end
-    filtered = d1.filtered_as_array
+    filtered = d1.filtered
 
-    assert_equal bad_json1, filtered[0][2]['log']
-    assert_equal bad_json2, filtered[1][2]['log']
+    assert_equal bad_json1, filtered[0][1]['log']
+    assert_equal bad_json2, filtered[1][1]['log']
   end
 
 end
